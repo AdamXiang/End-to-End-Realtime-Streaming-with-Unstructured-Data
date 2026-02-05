@@ -88,9 +88,9 @@ if __name__ == "__main__":
     )
 
 
-    job_bulletins_df = (
+    job_bulletins_df = ( 
         job_bulletins_df.withColumn('file_name', regexp_replace(udfs['extract_file_name_udf']('value'), '\r', ' '))
-                        .withColumn('value', regexp_replace(regexp_replace('value', r'\n', ' '), r'\r', ' ')
+                        .withColumn('value', regexp_replace(regexp_replace('value', r'\n', ' '), r'\r', ' '))
                         .withColumn('position', regexp_replace(udfs['extract_position_udf']('value'), '\r', ' '))
                         .withColumn('salary_start', udfs['extract_salary_udf']('value').getField('salary_start'))
                         .withColumn('salary_end', udfs['extract_salary_udf']('value').getField('salary_end'))
@@ -116,9 +116,11 @@ if __name__ == "__main__":
                                                'classcode', 'req', 'notes', 'duties', 'selection', 'experience_length', \
                                                 'education_length', 'application_location')
 
+    # union to df (one from text, another from json)
+    union_df = job_bulletins_df.union(json_df)
 
     query=  (
-        job_bulletins_df.writeStream
+        union_df.writeStream
             .outputMode('append')
             .format('console')
             .option('truncate', False)  # check all the data
