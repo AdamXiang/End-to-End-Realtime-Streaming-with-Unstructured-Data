@@ -1,0 +1,76 @@
+# ------------------------------------------------
+# 1. User Specific Rules (您的特定需求)
+# ------------------------------------------------
+# 忽略真實的設定檔 (含有密碼或金鑰)
+config/config.py
+
+# 但我們要保留 template (讓其他人知道如何設定)
+!config/config_template.py
+
+# ------------------------------------------------
+# 2. Python Standard (Python 專案必備)
+# ------------------------------------------------
+# Byte-compiled / Optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / Packaging
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# ------------------------------------------------
+# 3. Virtual Environments (虛擬環境，圖中有看到 .venv)
+# ------------------------------------------------
+# Virtual Environments
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# ------------------------------------------------
+# 4. IDE & OS Files (編輯器與系統產生的垃圾檔)
+# ------------------------------------------------
+# VS Code
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# Mac OS
+.DS_Store
+
+# Windows
+Thumbs.db
+
+# ------------------------------------------------
+# 5. Data / Inputs (強烈建議！)
+# ------------------------------------------------
+# 您的專案有 input 資料夾，通常大型資料、圖片、影片不建議上傳到 Git
+# 如果您希望忽略 input 資料夾下的所有內容，但保留資料夾結構，請使用下面這兩行：
+
+# 忽略 input 下的所有東西
+input/*
+
+# 但保留 .gitkeep (如果有放這個檔案來維持資料夾結構的話)
+!input/.gitkeep
+
+# 或者，如果您完全不想上傳 input 資料夾，直接用下面這行：
+# input/
