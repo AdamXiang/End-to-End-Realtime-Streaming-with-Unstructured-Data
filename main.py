@@ -73,7 +73,7 @@ if __name__ == "__main__":
     udfs = define_udfs()
 
 
-    # put text into value column
+    # put text into value column (read the text file and text will be stored in 'value' column)
     job_bulletins_df = (
         spark.readStream
             .format('text')
@@ -81,10 +81,16 @@ if __name__ == "__main__":
             .load(text_input_dir)
     )
 
+    # read the json file
+    json_df = (
+        spark.readStream
+            .json('input_json', schema=data_schema, multiLine=True)
+    )
+
 
     job_bulletins_df = (
         job_bulletins_df.withColumn('file_name', regexp_replace(udfs['extract_file_name_udf']('value'), '\r', ' '))
-                        .withColumn('value', regexp_replace('value', r'\n', ' '))
+                        .withColumn('value', regexp_replace(regexp_replace('value', r'\n', ' '), r'\r', ' ')
                         .withColumn('position', regexp_replace(udfs['extract_position_udf']('value'), '\r', ' '))
                         .withColumn('salary_start', udfs['extract_salary_udf']('value').getField('salary_start'))
                         .withColumn('salary_end', udfs['extract_salary_udf']('value').getField('salary_end'))
@@ -100,7 +106,13 @@ if __name__ == "__main__":
                         .withColumn('application_location', udfs['extract_application_location_udf']('value'))
     )
 
+    # select the data from text file
     job_bulletins_df = job_bulletins_df.select('file_name', 'start_date', 'end_date', 'salary_start', 'salary_end', \
+                                               'classcode', 'req', 'notes', 'duties', 'selection', 'experience_length', \
+                                                'education_length', 'application_location')
+
+    # select the data from json file
+    json_df = json_df.select('file_name', 'start_date', 'end_date', 'salary_start', 'salary_end', \
                                                'classcode', 'req', 'notes', 'duties', 'selection', 'experience_length', \
                                                 'education_length', 'application_location')
 
