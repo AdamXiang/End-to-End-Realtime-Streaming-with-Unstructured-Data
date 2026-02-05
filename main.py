@@ -1,5 +1,5 @@
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import udf
+from pyspark.sql.functions import udf, regexp_replace
 from pyspark.sql.types import StructType, StructField, StringType, DateType, DoubleType
 
 from udf_utils import *
@@ -41,12 +41,12 @@ if __name__ == "__main__":
             .getOrCreate()
     )
 
-    text_input_dir = 'file:\\\D:\Programming\DE\AWS Realtime\input\input_text'
-    json_input_dir = 'file:\\\D:\Programming\DE\AWS Realtime\input\input_json'
-    pdf_input_dir = 'file:\\\D:\Programming\DE\AWS Realtime\input\input_pdf'
-    video_input_dir = 'file:\\\D:\Programming\DE\AWS Realtime\input\input_video'
-    csv_input_dir = 'file:\\\D:\Programming\DE\AWS Realtime\input\input_csv'
-    image_input_dir = 'file:\\\D:\Programming\DE\AWS Realtime\input\input_image'
+    text_input_dir = r'D:\Programming\DE\AWS Realtime\input\input_text'
+    json_input_dir = r'D:\Programming\DE\AWS Realtime\input\input_json'
+    pdf_input_dir = r'D:\Programming\DE\AWS Realtime\input\input_pdf'
+    video_input_dir = r'D:\Programming\DE\AWS Realtime\input\input_video'
+    csv_input_dir = r'D:\Programming\DE\AWS Realtime\input\input_csv'
+    image_input_dir = r'D:\Programming\DE\AWS Realtime\input\input_image'
 
 
     data_schema = StructType([
@@ -80,6 +80,29 @@ if __name__ == "__main__":
             .option('wholetext', 'true')
             .load(text_input_dir)
     )
+
+
+    job_bulletins_df = (
+        job_bulletins_df.withColumn('file_name', regexp_replace(udfs['extract_file_name_udf']('value'), '\r', ' '))
+                        .withColumn('value', regexp_replace('value', r'\n', ' '))
+                        .withColumn('position', regexp_replace(udfs['extract_position_udf']('value'), '\r', ' '))
+                        .withColumn('salary_start', udfs['extract_salary_udf']('value').getField('salary_start'))
+                        .withColumn('salary_end', udfs['extract_salary_udf']('value').getField('salary_end'))
+                        .withColumn('start_date', udfs['extract_date_udf']('value'))
+                        .withColumn('end_date', udfs['extract_enddate_udf']('value'))
+                        .withColumn('classcode', udfs['extract_classcode_udf']('value'))
+                        .withColumn('req', udfs['extract_requirements_udf']('value'))
+                        .withColumn('notes', udfs['extract_notes_udf']('value'))
+                        .withColumn('duties', udfs['extract_duties_udf']('value'))
+                        .withColumn('selection', udfs['extract_selection_udf']('value'))
+                        .withColumn('experience_length', udfs['extract_experience_length_udf']('value'))
+                        .withColumn('education_length', udfs['extract_education_length_udf']('value'))
+                        .withColumn('application_location', udfs['extract_application_location_udf']('value'))
+    )
+
+    job_bulletins_df = job_bulletins_df.select('file_name', 'start_date', 'end_date', 'salary_start', 'salary_end', \
+                                               'classcode', 'req', 'notes', 'duties', 'selection', 'experience_length', \
+                                                'education_length', 'application_location')
 
 
     query=  (
