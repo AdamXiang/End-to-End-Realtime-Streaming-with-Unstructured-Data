@@ -7,9 +7,19 @@ from config.config import configuration
 
 
 def define_udfs():
+    """
+    Registry for User Defined Functions.
+    
+    Performance Note: Python UDFs incur serialization overhead (pickling) between 
+    the JVM and Python worker. While native Spark SQL functions are faster, 
+    UDFs are necessary here for complex regex parsing of unstructured text.
+    """
     return {
         'extract_file_name_udf': udf(extract_file_name, StringType()),
         'extract_position_udf': udf(extract_position, StringType()),
+
+        # Optimization: Return a StructType to extract multiple related fields 
+        # in a single pass, avoiding redundant regex execution.
         'extract_salary_udf': udf(extract_salary, StructType([
             StructField('salary_start', DoubleType(), True),
             StructField('salary_end', DoubleType(), True)
@@ -29,6 +39,12 @@ def define_udfs():
 
 
 if __name__ == "__main__":
+    # Infrastructure & Dependency Management
+    # explicitly defining Maven coordinates prevents dependency conflicts.
+    #
+    # Security Warning: In production, avoid hardcoding keys. Use 
+    # 'InstanceProfileCredentialsProvider' (IAM Roles) for better security.
+    # SimpleAWSCredentialsProvider is used here for explicit local dev auth.
     spark = (
         SparkSession.builder.appName("AWS_Spark_Unstructured_Streaming") 
             .config('spark.jars.packages',
@@ -49,6 +65,9 @@ if __name__ == "__main__":
     image_input_dir = r'D:\Programming\DE\AWS Realtime\input\input_image'
 
 
+    # Performance: Schema Enforcement
+    # Defining schema explicitly prevents Spark from inferring it (expensive operation).
+    # It also ensures pipeline stability by failing fast on malformed data types.
     data_schema = StructType([
         StructField('file_name', StringType(), True),
         StructField('position', StringType(), True),
@@ -69,11 +88,12 @@ if __name__ == "__main__":
     ])
 
 
-    # create custom function for parsing unstructured data
     udfs = define_udfs()
 
 
-    # put text into value column (read the text file and text will be stored in 'value' column)
+    # Data Ingestion: Text Stream
+    # 'wholetext' reads the entire file content into a single row. 
+    # Risk: May cause OOM (Out of Memory) if individual source files are massive.
     job_bulletins_df = (
         spark.readStream
             .format('text')
@@ -81,13 +101,19 @@ if __name__ == "__main__":
             .load(text_input_dir)
     )
 
-    # read the json file
+    # Data Ingestion: JSON Stream
+    # 'multiLine' loads the whole JSON object into memory to parse.
+    # Ensure input file sizes fit within Executor memory limits.
     json_df = (
         spark.readStream
             .json('input_json', schema=data_schema, multiLine=True)
     )
 
 
+    # Transformation Pipeline
+    # 1. Pre-processing: Clean newlines/returns to ensure regex consistency.
+    # 2. Extraction: Apply Python UDFs to parse unstructured text.
+    # 3. Struct Unpacking: Extract specific fields from UDF results.
     job_bulletins_df = ( 
         job_bulletins_df.withColumn('file_name', regexp_replace(udfs['extract_file_name_udf']('value'), '\r', ' '))
                         .withColumn('value', regexp_replace(regexp_replace('value', r'\n', ' '), r'\r', ' '))
@@ -106,17 +132,17 @@ if __name__ == "__main__":
                         .withColumn('application_location', udfs['extract_application_location_udf']('value'))
     )
 
-    # select the data from text file
+    # Select the data from text file
     job_bulletins_df = job_bulletins_df.select('file_name', 'start_date', 'end_date', 'salary_start', 'salary_end', \
                                                'classcode', 'req', 'notes', 'duties', 'selection', 'experience_length', \
                                                 'education_length', 'application_location')
 
-    # select the data from json file
+    # Select the data from json file
     json_df = json_df.select('file_name', 'start_date', 'end_date', 'salary_start', 'salary_end', \
                                                'classcode', 'req', 'notes', 'duties', 'selection', 'experience_length', \
                                                 'education_length', 'application_location')
 
-    # union to df (one from text, another from json)
+    # Merge streams into a unified dataset
     union_df = job_bulletins_df.union(json_df)
 
 
@@ -124,6 +150,9 @@ if __name__ == "__main__":
     def stream_writer(input: DataFrame, checkpoint_folder, output):
         return (input.writeStream
                     .format('parquet')
+                    # Reliability: Checkpointing
+                    # Critical for Fault Tolerance. Allows the stream to recover 
+                    # from failure and resume from the last processed offset.
                     .option('checkpointLocation', checkpoint_folder)
                     .option('path', output)
                     .outputMode('append')
