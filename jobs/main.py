@@ -2,7 +2,7 @@ from pyspark.sql import SparkSession
 from pyspark.sql.functions import udf, regexp_replace, DataFrame
 from pyspark.sql.types import StructType, StructField, StringType, DateType, DoubleType
 
-from udf_utils import *
+from jobs.udf_utils import *
 from config.config import configuration
 
 
@@ -57,12 +57,13 @@ if __name__ == "__main__":
             .getOrCreate()
     )
 
-    text_input_dir = r'D:\Programming\DE\AWS Realtime\input\input_text'
-    json_input_dir = r'D:\Programming\DE\AWS Realtime\input\input_json'
-    pdf_input_dir = r'D:\Programming\DE\AWS Realtime\input\input_pdf'
-    video_input_dir = r'D:\Programming\DE\AWS Realtime\input\input_video'
-    csv_input_dir = r'D:\Programming\DE\AWS Realtime\input\input_csv'
-    image_input_dir = r'D:\Programming\DE\AWS Realtime\input\input_image'
+    # Path inside docker container
+    text_input_dir = r'file:///opt/bitnami/spark/jobs/input/input_text'
+    json_input_dir = r'file:///opt/bitnami/spark/jobs/input/input_json'
+    pdf_input_dir = r'file:///opt/bitnami/spark/jobs/input/input_pdf'
+    video_input_dir = r'file:///opt/bitnami/spark/jobs/input/input_video'
+    csv_input_dir = r'file:///opt/bitnami/spark/jobs/input/input_csv'
+    image_input_dir = r'file:///opt/bitnami/spark/jobs/input/input_image'
 
 
     # Performance: Schema Enforcement

@@ -44,4 +44,5 @@ services:
   spark-worker-4:
     <<: *spark-common
 
-networks: datamasterylab
+networks:
+  datamasterylab:
