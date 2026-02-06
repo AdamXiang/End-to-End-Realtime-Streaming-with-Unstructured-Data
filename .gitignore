@@ -37,6 +37,7 @@ MANIFEST
 # 3. Virtual Environments (虛擬環境，圖中有看到 .venv)
 # ------------------------------------------------
 # Virtual Environments
+**/.venv/
 .venv/
 venv/
 env/
