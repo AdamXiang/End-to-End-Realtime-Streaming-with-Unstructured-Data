@@ -1,5 +1,5 @@
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import udf, regexp_replace
+from pyspark.sql.functions import udf, regexp_replace, DataFrame
 from pyspark.sql.types import StructType, StructField, StringType, DateType, DoubleType
 
 from udf_utils import *
@@ -119,12 +119,30 @@ if __name__ == "__main__":
     # union to df (one from text, another from json)
     union_df = job_bulletins_df.union(json_df)
 
-    query=  (
-        union_df.writeStream
-            .outputMode('append')
-            .format('console')
-            .option('truncate', False)  # check all the data
-            .start()
-    )
+
+    # create the streamWriter function
+    def stream_writer(input: DataFrame, checkpoint_folder, output):
+        return (input.writeStream
+                    .format('parquet')
+                    .option('checkpointLocation', checkpoint_folder)
+                    .option('path', output)
+                    .outputMode('append')
+                    .trigger(processingTime='5 seconds')
+                    .start()
+                )
+    
+
+    # query=  (
+    #     union_df.writeStream
+    #         .outputMode('append')
+    #         .format('console')
+    #         .option('truncate', False)  # check all the data
+    #         .start()
+    # )
+
+    query = stream_writer(union_df, 's3a://my-spark-s3-unstructured-streaming/checkpoints/', 's3a://my-spark-s3-unstructured-streaming/data/spark_unstructured')
 
     query.awaitTermination()
+
+
+    spark.stop()
