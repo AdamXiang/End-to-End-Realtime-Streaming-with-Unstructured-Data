@@ -22,76 +22,76 @@ A production-grade Spark Structured Streaming pipeline that extracts structured 
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                        INPUT SOURCES                                 │
+│                        INPUT SOURCES                                │
 │  ┌──────────────────┐              ┌──────────────────┐             │
 │  │  input_text/     │              │  input_json/     │             │
 │  │  (Unstructured)  │              │  (Semi-struct.)  │             │
 │  └────────┬─────────┘              └────────┬─────────┘             │
-└───────────┼─────────────────────────────────┼──────────────────────┘
-            │                                  │
-            │        File-based Streaming      │
-            ▼                                  ▼
+└───────────┼─────────────────────────────────┼───────────────────────┘
+            │                                 │
+            │        File-based Streaming     │
+            ▼                                 ▼
 ┌─────────────────────────────────────────────────────────────────────┐
-│              SPARK STRUCTURED STREAMING CLUSTER                      │
+│              SPARK STRUCTURED STREAMING CLUSTER                     │
 │  ┌──────────────────────────────────────────────────────────┐       │
 │  │  Spark Master (Coordinator)                              │       │
 │  │  - Job scheduling & resource allocation                  │       │
 │  └──────────────────────────────────────────────────────────┘       │
-│                                                                      │
-│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌──────────────┐ │
-│  │  Worker 1   │ │  Worker 2   │ │  Worker 3   │ │  Worker 4    │ │
-│  │  2C / 1GB   │ │  2C / 1GB   │ │  2C / 1GB   │ │  2C / 1GB    │ │
-│  └─────────────┘ └─────────────┘ └─────────────┘ └──────────────┘ │
-│                                                                      │
-│  Processing Pipeline:                                                │
-│  1. Read Stream (wholetext/multiline)                                │
-│  2. Apply Python UDFs (regex extraction)                             │
-│  3. Union heterogeneous sources                                      │
-│  4. Write Stream (Parquet + Checkpointing)                           │
-│                                                                      │
-│  Trigger: Micro-batch every 5 seconds                                │
-└──────────────────────────────┬───────────────────────────────────────┘
+│                                                                     │
+│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌──────────────┐   │
+│  │  Worker 1   │ │  Worker 2   │ │  Worker 3   │ │  Worker 4    │   │
+│  │  2C / 1GB   │ │  2C / 1GB   │ │  2C / 1GB   │ │  2C / 1GB    │   │
+│  └─────────────┘ └─────────────┘ └─────────────┘ └──────────────┘   │
+│                                                                     │
+│  Processing Pipeline:                                               │
+│  1. Read Stream (wholetext/multiline)                               │
+│  2. Apply Python UDFs (regex extraction)                            │
+│  3. Union heterogeneous sources                                     │
+│  4. Write Stream (Parquet + Checkpointing)                          │
+│                                                                     │
+│  Trigger: Micro-batch every 5 seconds                               │
+└──────────────────────────────┬──────────────────────────────────────┘
                                │
                    Fault-Tolerant Output
                                │
                                ▼
 ┌─────────────────────────────────────────────────────────────────────┐
-│                          AWS S3 BUCKET                               │
+│                          AWS S3 BUCKET                              │
 │  ┌────────────────────────────────────────────────────────┐         │
 │  │  s3://my-spark-s3-unstructured-streaming/              │         │
-│  │                                                         │         │
+│  │                                                        │         │
 │  │  ├── checkpoints/                (Recovery metadata)   │         │
 │  │  │   └── offsets/commits/sources/                      │         │
-│  │  │                                                      │         │
+│  │  │                                                     │         │
 │  │  └── data/spark_unstructured/    (Parquet files)       │         │
 │  │      ├── part-00000.snappy.parquet                     │         │
 │  │      ├── part-00001.snappy.parquet                     │         │
 │  │      └── _spark_metadata/        (Streaming metadata)  │         │
 │  └────────────────────────────────────────────────────────┘         │
-└────────────────────────────┬──────────────────────────────────────┘
+└────────────────────────────┬────────────────────────────────────────┘
                              │
               Schema Discovery & Cataloging
                              │
                              ▼
 ┌─────────────────────────────────────────────────────────────────────┐
-│                      AWS GLUE CRAWLER                                │
+│                      AWS GLUE CRAWLER                               │
 │  - Auto-discover schema from Parquet files                          │
 │  - Exclude _spark_metadata to prevent schema pollution              │
 │  - Update Glue Data Catalog tables                                  │
-└────────────────────────────┬──────────────────────────────────────┘
+└────────────────────────────┬────────────────────────────────────────┘
                              │
                 SQL Query Interface
                              │
                              ▼
 ┌─────────────────────────────────────────────────────────────────────┐
-│                        AWS ATHENA                                    │
+│                        AWS ATHENA                                   │
 │  Interactive SQL queries on streaming data:                         │
-│                                                                      │
+│                                                                     │
 │  SELECT position, AVG(salary_start) as avg_salary                   │
-│  FROM spark_unstructured                                             │
-│  WHERE start_date >= DATE '2023-01-01'                               │
-│  GROUP BY position                                                   │
-│  ORDER BY avg_salary DESC;                                           │
+│  FROM spark_unstructured                                            │
+│  WHERE start_date >= DATE '2023-01-01'                              │
+│  GROUP BY position                                                  │
+│  ORDER BY avg_salary DESC;                                          │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -658,3 +658,4 @@ Data Engineer | Portfolio Project
 
 **Built with**: Spark 4.1.1 | AWS S3 | Docker Compose | Python 3.12  
 **Last Updated**: February 2026
+
